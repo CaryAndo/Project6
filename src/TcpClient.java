@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class TcpClient {
@@ -11,15 +12,29 @@ public class TcpClient {
             Socket socket = new Socket("45.50.5.238", 38006);
             InputStream is = socket.getInputStream();
 
-            sendTCP(socket, 2, new Random().nextInt(12)+1, false, true, false);
+            sendTCP(socket, 0, new Random().nextInt(12)+1, 0,false, true, false);
+            readAndPrint(is); // Response code
 
-            int a = is.read();
-            int b = is.read();
-            int c = is.read();
-            int d = is.read();
+            ArrayList<Byte> ar = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                byte b = (byte) is.read();;
 
-            System.out.println("Received: 0x" + (Integer.toString(a, 16) + Integer.toString(b, 16) +
-                                Integer.toString(c, 16) + Integer.toString(d, 16)).toUpperCase());
+                ar.add(b);
+                System.out.println(b);
+            }
+
+            byte[] arr = new byte[ar.size()];
+
+            for (int i = 0; i < ar.size(); i++) {
+                arr[i] = ar.get(i);
+            }
+            byte seq1 = arr[4];
+            byte seq2 = arr[5];
+            byte seq3 = arr[6];
+            byte seq4 = arr[7];
+            int sequence = (((((seq1<<8)+seq2)<<8)+seq3)<<8)+seq4; // As you can see, readability is important to me
+            sequence += 1;
+
 
         } catch (IOException ioe) {
             ioe.printStackTrace();
@@ -35,7 +50,8 @@ public class TcpClient {
             int c = is.read();
             int d = is.read();
             System.out.print("Received: ");
-            System.out.println("0x" + Integer.toString(a, 16) + Integer.toString(b, 16) + Integer.toString(c, 16) + Integer.toString(d, 16));
+            System.out.println("Received: 0x" + (Integer.toString(a, 16) + Integer.toString(b, 16) +
+                            Integer.toString(c, 16) + Integer.toString(d, 16)).toUpperCase());
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -51,8 +67,8 @@ public class TcpClient {
      * @param syn Set the SYN flag
      * @param fin Set the FIN flag
      */
-    private static void sendTCP(Socket sock, int len, int sequence, boolean ack, boolean syn, boolean fin) {
-        byte[] send = new byte[20 + 20]; // 20 bytes for ip header + 20 bytes for TCP header
+    private static void sendTCP(Socket sock, int len, int sequence, int ackNumber, boolean ack, boolean syn, boolean fin) {
+        byte[] send = new byte[20 + 20 + len]; // 20 bytes for ip header + 20 bytes for TCP header
 
         send[0] = (byte) ((4 << 4) + 5); // Version 4 and 5 words
         send[1] = 0; // TOS (Don't implement)
@@ -63,17 +79,23 @@ public class TcpClient {
         send[6] = (byte) 0b01000000; // Flags and first part of Fragment offset
         send[7] = (byte) 0b00000000; // Fragment offset
         send[8] = 50; // TTL = 50
-        send[9] = 6; // Protocol (TCP = 6)
+        send[9] = 0x06; // Protocol (TCP = 6)
         send[10] = 0; // CHECKSUM
         send[11] = 0; // CHECKSUM
         send[12] = (byte) 127; // 127.0.0.1 (source address)
         send[13] = (byte) 0; // 127.0.0.1 (source address)
         send[14] = (byte) 0; // 127.0.0.1 (source address)
         send[15] = (byte) 1; // 127.0.0.1 (source address)
-        send[16] = (byte) 45; // (destination address)
-        send[17] = (byte) 50; // (destination address)
-        send[18] = (byte) 5; // (destination address)
-        send[19] = (byte) 238; // (destination address)
+        send[16] = (byte) 76; // (destination address)
+        send[17] = (byte) 91; // (destination address)
+        send[18] = (byte) 123; // (destination address)
+        send[19] = (byte) 97; // (destination address)
+
+        short length = (short) (20 + 20 + len); // Quackulate the total length (header lengths plus data length)
+        byte right = (byte) (length & 0xff);
+        byte left = (byte) ((length >> 8) & 0xff);
+        send[2] = left;
+        send[3] = right;
 
         short checksum = calculateChecksum(send); // Quackulate the checksum
 
@@ -88,23 +110,19 @@ public class TcpClient {
         /*
         * TCP Header
         * */
-        short tcpLen = (short) (28 + len);
-        byte rightLen = (byte) (tcpLen & 0xff);
-        byte leftLen = (byte) ((tcpLen >> 8) & 0xff);
-
         send[20] = (byte) 12; // Source Port
         send[21] = (byte) 34; // Source Port
         send[22] = (byte) ((1234 >> 8) & 0xff); // Destination Port (Right Half)
         send[23] = (byte) (1234 & 0xff); // Destination Port (Left Half)
 
-        send[24] = (byte) sequence; // Sequence Number
-        send[25] = (byte) (rightLen >> 8); // Sequence Number
-        send[26] = (byte) (rightLen >> 16); // Sequence Number
-        send[27] = (byte) (rightLen >> 24); // Sequence Number
-        send[28] = 0; // Acknowledgement Number
-        send[29] = 0; // Acknowledgement Number
-        send[30] = 0; // Acknowledgement Number
-        send[31] = 0; // Acknowledgement Number idk lol
+        send[24] = (byte) ((sequence & 0xff000000)>>24); // Sequence Number
+        send[25] = (byte) ((sequence & 0x00ff0000)>>16); // Sequence Number
+        send[26] = (byte) ((sequence & 0x0000ff00)>>8); // Sequence Number
+        send[27] = (byte) (sequence & 0x000000ff); // Sequence Number
+        send[28] = (byte) ((ackNumber & 0xff000000)>>24); // Acknowledgement Number
+        send[29] = (byte) ((ackNumber & 0xff000000)>>16); // Acknowledgement Number
+        send[30] = (byte) ((ackNumber & 0xff000000)>>8); // Acknowledgement Number
+        send[31] = (byte) (ackNumber & 0xff000000); // Acknowledgement Number
         send[32] = 5 << 4; // Data Offset (5 32-bit words) + reserved + 1st bit of ECN (0)
 
         String controlBits = "000"; // 2 bits of ECN + URG
@@ -179,7 +197,7 @@ public class TcpClient {
         checksumArray[30] = send[38]; // Urgent Pointer
         checksumArray[31] = send[39]; // Urgent Pointer
         // end actual header
-        checksumArray = concatenateByteArrays(checksumArray, data); // Append data
+        //checksumArray = concatenateByteArrays(checksumArray, data); // Append data
 
         short udpChecksum = calculateChecksum(checksumArray);
         byte rightCheck = (byte) (udpChecksum & 0xff);
@@ -188,13 +206,19 @@ public class TcpClient {
         send[36] = leftCheck; // Save checksum
         send[37] = rightCheck; // Save checksum
 
-        short length = (short) send.length; // Quackulate the total length (header lengths plus data length)
-        byte right = (byte) (length & 0xff);
-        byte left = (byte) ((length >> 8) & 0xff);
-        send[2] = left;
-        send[3] = right;
+       /* for (int i = 40; i < send.length; i++) {
+            send[i] = data[i-40];
+        }*/
 
-        send = concatenateByteArrays(send, data);
+        for (int i = 0; i < len; i++) {
+            send[i+40] = (byte) 125;
+        }
+
+        for (byte b : send) {
+            System.out.println(b);
+        }
+
+        //send = concatenateByteArrays(send, data);
 
         try {
             OutputStream os = sock.getOutputStream();
