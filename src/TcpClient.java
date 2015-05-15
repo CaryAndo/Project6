@@ -5,6 +5,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 
+/**
+ * CS380 Project 6: TCP Client
+ *
+ * @author Cary Anderson
+ * */
 public class TcpClient {
 
     public static void main(String[] args) {
@@ -39,17 +44,27 @@ public class TcpClient {
             sequence += ((seq3<<8)&0xffff);
             sequence += (seq4&0xff);
 
-            int acknowledgementNumber = sequence;
-
             sendTCP(socket, 0, mySequenceNumber+1, sequence+1, true, false, false);
             readAndPrint(is);
 
+            int finalMySequence = 0;
+            int finalOtherSequence = 0;
 
+            for (int i = 1; i < 13; i++) {
+                int leNum = (int) Math.pow(2.0, (double) i);
+                System.out.println(leNum);
+                sendTCP(socket, leNum, mySequenceNumber + leNum, sequence + leNum, false, false, false);
+                readAndPrint(is);
+                finalMySequence = mySequenceNumber + leNum;
+                finalOtherSequence = sequence + leNum;
+            }
 
-            sendTCP(socket, 2, mySequenceNumber + 2, sequence + 2, false, false, false);
+            System.out.println("Sending teardown:");
+            sendTCP(socket, 0, finalMySequence + 1, finalOtherSequence + 1, false, false, true);
             readAndPrint(is);
 
         } catch (IOException ioe) {
+            System.out.println("Socket threw an IO Error");
             ioe.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
@@ -57,6 +72,11 @@ public class TcpClient {
         }
     }
 
+    /**
+     * Take an input stream and read four bytes as a hex string.
+     *
+     * @param is The input stream to read from
+     * */
     private static void readAndPrint(InputStream is) {
         try {
             int a = is.read();
@@ -194,14 +214,14 @@ public class TcpClient {
         checksumArray[13] = send[21]; // Source Port
         checksumArray[14] = send[22]; // Destination Port
         checksumArray[15] = send[23]; // Destination Port
-        checksumArray[16] = send[24]; // Sequence
-        checksumArray[17] = send[25]; // Sequence
-        checksumArray[18] = send[26]; // Sequence
-        checksumArray[19] = send[27]; // Sequence
-        checksumArray[20] = send[28]; // Ack
-        checksumArray[21] = send[29]; // Ack
-        checksumArray[22] = send[30]; // Ack
-        checksumArray[23] = send[31]; // Ack
+        checksumArray[16] = send[24]; // Sequence Number
+        checksumArray[17] = send[25]; // Sequence Number
+        checksumArray[18] = send[26]; // Sequence Number
+        checksumArray[19] = send[27]; // Sequence Number
+        checksumArray[20] = send[28]; // Acknowledgement Number
+        checksumArray[21] = send[29]; // Acknowledgement Number
+        checksumArray[22] = send[30]; // Acknowledgement Number
+        checksumArray[23] = send[31]; // Acknowledgement Number
         checksumArray[24] = send[32]; // Offset
         checksumArray[25] = send[33]; // Control bits
         checksumArray[26] = send[34]; // Window
@@ -237,65 +257,11 @@ public class TcpClient {
     }
 
     /**
-     * Send the handshake packet
-     * */
-    private static void sendHandShake(Socket sock) {
-        byte[] send = new byte[20+4];
-
-        send[0] = (byte) ((4 << 4) + 5);; // Version 4 and 5 words
-        send[1] = 0; // TOS (Don't implement)
-        send[2] = 0; // Total length
-        send[3] = 22; // Total length
-        send[4] = 0; // Identification (Don't implement)
-        send[5] = 0; // Identification (Don't implement)
-        send[6] = (byte) 0b01000000; // Flags and first part of Fragment offset
-        send[7] = (byte) 0b00000000; // Fragment offset
-        send[8] = 50; // TTL = 50
-        send[9] = 0x11; // Protocol (UDP = 17)
-        send[10] = 0; // CHECKSUM
-        send[11] = 0; // CHECKSUM
-        send[12] = (byte) 127; // 127.0.0.1 (source address)
-        send[13] = (byte) 0; // 127.0.0.1 (source address)
-        send[14] = (byte) 0; // 127.0.0.1 (source address)
-        send[15] = (byte) 1; // 127.0.0.1 (source address)
-        send[16] = (byte) 0x2d; // 127.0.0.1 (destination address)
-        send[17] = (byte) 0x32; // 127.0.0.1 (destination address)
-        send[18] = (byte) 0x5; // 127.0.0.1 (destination address)
-        send[19] = (byte) 0xee; // 127.0.0.1 (destination address)
-
-        short length = (short) (20 + 4); // Quackulate the total length
-        byte right = (byte) (length & 0xff);
-        byte left = (byte) ((length >> 8) & 0xff);
-        send[2] = left;
-        send[3] = right;
-
-        short checksum = calculateChecksum(send); // Quackulate the checksum
-
-        byte second = (byte) (checksum & 0xff);
-        byte first = (byte) ((checksum >> 8) & 0xff);
-        send[10] = first;
-        send[11] = second;
-
-        send[20] = (byte) 0xDE;
-        send[21] = (byte) 0xAD;
-        send[22] = (byte) 0xBE;
-        send[23] = (byte) 0xEF;
-
-        try {
-            OutputStream os = sock.getOutputStream();
-
-            os.write(send);
-            os.flush();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-    }
-
-    /**
      * Concatenate one array with another
      *
      * @param first First array
      * @param second Second array
+     * @return The concatenated array
      * */
     private static byte[] concatenateByteArrays(byte[] first, byte[] second) {
         int firstLength = first.length;
