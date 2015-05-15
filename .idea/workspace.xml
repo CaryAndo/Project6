@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f7091ca3-d97e-4679-94bc-89f88ff198a1" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/out/production/Project6/TcpClient.class" afterPath="$PROJECT_DIR$/out/production/Project6/TcpClient.class" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/TcpClient.java" afterPath="$PROJECT_DIR$/src/TcpClient.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="Project6.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,8 +28,8 @@
       <file leaf-file-name="TcpClient.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/TcpClient.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.75429326">
-              <caret line="69" column="32" selection-start-line="69" selection-start-column="32" selection-end-line="69" selection-end-column="32" />
+            <state vertical-scroll-proportion="0.61558783">
+              <caret line="84" column="0" selection-start-line="84" selection-start-column="0" selection-end-line="84" selection-end-column="0" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -477,12 +475,12 @@
       <updated>1431457074106</updated>
       <workItem from="1431457079152" duration="8172000" />
       <workItem from="1431629424445" duration="33000" />
-      <workItem from="1431629499421" duration="18663000" />
+      <workItem from="1431629499421" duration="19082000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="26868000" />
+    <option name="totallyTimeSpent" value="27287000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="4" y="23" width="1436" height="877" extended-state="6" />
@@ -556,8 +554,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/TcpClient.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.75429326">
-          <caret line="69" column="32" selection-start-line="69" selection-start-column="32" selection-end-line="69" selection-end-column="32" />
+        <state vertical-scroll-proportion="0.61558783">
+          <caret line="84" column="0" selection-start-line="84" selection-start-column="0" selection-end-line="84" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>

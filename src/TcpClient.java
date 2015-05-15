@@ -22,16 +22,10 @@ public class TcpClient {
 
             ArrayList<Byte> ar = new ArrayList<>();
             for (int i = 0; i < 20; i++) {
-                byte b = (byte) is.read();;
+                byte b = (byte) is.read();
 
                 ar.add(b);
-                System.out.println(b);
-            }
-
-            byte[] arr = new byte[ar.size()];
-
-            for (int i = 0; i < ar.size(); i++) {
-                arr[i] = ar.get(i);
+                //System.out.println(b);
             }
 
             byte seq1 = ar.get(4);
@@ -63,11 +57,31 @@ public class TcpClient {
             sendTCP(socket, 0, finalMySequence + 1, finalOtherSequence + 1, false, false, true);
             readAndPrint(is);
 
+            ar = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                byte b = (byte) is.read();;
+
+                ar.add(b);
+            }
+
+            System.out.println("Received ACK");
+
+            ar = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                byte b = (byte) is.read();;
+
+                ar.add(b);
+            }
+
+            System.out.println("Received FIN");
+            System.out.println("Sending last ACK:");
+            sendTCP(socket, 0, finalMySequence + 1, finalOtherSequence + 1, true, false, false);
+            readAndPrint(is);
+
         } catch (IOException ioe) {
             System.out.println("Socket threw an IO Error");
             ioe.printStackTrace();
         } catch (Exception e) {
-            e.printStackTrace();
             // "Just eat it, nah nah nah nah nah, just eat it." - Weird Al
         }
     }
